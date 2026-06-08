@@ -8,161 +8,120 @@ from cache_engine import CacheSimulator, CacheStats
 TRACE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'trace')
 
 TRACE_FILES = {
-    "085.gcc.din": "GCC Compiler",
-    "022.li.din": "Lisp Interpreter",
-    "047.tomcatv.din": "Tomcatv (Vector)",
-    "078.swm256.din": "Swim (Shallow Water)",
+    "085.gcc.din": "GCC 编译器",
+    "022.li.din": "Lisp 解释器",
+    "047.tomcatv.din": "Tomcatv (向量)",
+    "078.swm256.din": "Swim (浅水方程)",
 }
 
 CACHE_SIZES = ["8KB", "16KB", "32KB", "64KB"]
-ASSOCIATIVITIES = ["1 (Direct)", "2", "4", "8"]
+ASSOCIATIVITIES = ["1 (直接映射)", "2", "4", "8"]
 BLOCK_SIZES = ["16B", "32B", "64B", "128B"]
+
+RESULT_TEMPLATE = """======================================================================
+  Cache 模拟结果
+======================================================================
+配置: {config}
+Trace 文件: {trace_name}   处理行数: {lines}
+
+  总访问: {total_accesses:>10,}    总命中: {total_hits:>10,}   命中率: {hit_rate:7.2%}
+  读操作: {reads:>10,}    读命中: {read_hits:>10,}   读命中率: {read_hit_rate:7.2%}
+  写操作: {writes:>10,}    写命中: {write_hits:>10,}   写命中率: {write_hit_rate:7.2%}
+  取指令: {instruction_fetches:>10,}    取指命中: {instruction_hits:>10,}
+  替换:   {replacements:>10,}    写回:   {writebacks:>10,}
+======================================================================"""
 
 class CacheGUI:
 
     def __init__(self):
         self.sim = CacheSimulator()
         self.batch_results = []
-        self.sim_thread = None
         self.sim_running = False
 
         self.root = tk.Tk()
-        self.root.title("Cache Simulator - Module A (Self-Designed)")
-        self.root.geometry("1200x850")
-        self.root.configure(bg='#f0f0f0')
+        self.root.title("Cache模拟器")
+        self.root.geometry("1050x680")
+        self.root.configure(bg='#f5f5f5')
 
-        self._build_menu()
         self._build_layout()
 
         self.root.mainloop()
 
-    def _build_menu(self):
-        menubar = tk.Menu(self.root)
-        file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Select Trace File...", command=self._select_trace)
-        file_menu.add_command(label="Save Results...", command=self._save_results)
-        file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.quit)
-        menubar.add_cascade(label="File", menu=file_menu)
-        self.root.config(menu=menubar)
-
     def _build_layout(self):
 
-        config_frame = ttk.LabelFrame(self.root, text="Cache Configuration")
-        config_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
+        top_bar = ttk.Frame(self.root)
+        top_bar.pack(fill=tk.X, padx=10, pady=(10, 4))
 
-        row1 = ttk.Frame(config_frame)
-        row1.pack(fill=tk.X, padx=10, pady=5)
-
-        ttk.Label(row1, text="Cache Size:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(top_bar, text="Cache 大小:").pack(side=tk.LEFT)
         self.size_var = tk.StringVar(value="16KB")
-        size_cb = ttk.Combobox(row1, textvariable=self.size_var, values=CACHE_SIZES,
-                               state='readonly', width=10)
-        size_cb.pack(side=tk.LEFT, padx=(0, 20))
+        ttk.Combobox(top_bar, textvariable=self.size_var, values=CACHE_SIZES,
+                     state='readonly', width=6).pack(side=tk.LEFT, padx=(2, 12))
 
-        ttk.Label(row1, text="Associativity:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(top_bar, text="相联度:").pack(side=tk.LEFT)
         self.assoc_var = tk.StringVar(value="4")
-        assoc_cb = ttk.Combobox(row1, textvariable=self.assoc_var, values=ASSOCIATIVITIES,
-                                state='readonly', width=12)
-        assoc_cb.pack(side=tk.LEFT, padx=(0, 20))
+        ttk.Combobox(top_bar, textvariable=self.assoc_var, values=ASSOCIATIVITIES,
+                     state='readonly', width=10).pack(side=tk.LEFT, padx=(2, 12))
 
-        ttk.Label(row1, text="Block Size:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(top_bar, text="块大小:").pack(side=tk.LEFT)
         self.block_var = tk.StringVar(value="32B")
-        block_cb = ttk.Combobox(row1, textvariable=self.block_var, values=BLOCK_SIZES,
-                                state='readonly', width=10)
-        block_cb.pack(side=tk.LEFT, padx=(0, 20))
+        ttk.Combobox(top_bar, textvariable=self.block_var, values=BLOCK_SIZES,
+                     state='readonly', width=6).pack(side=tk.LEFT, padx=(2, 12))
 
-        ttk.Label(row1, text="Replacement: LRU").pack(side=tk.LEFT, padx=(0, 20))
-        ttk.Label(row1, text="Write Policy: Write-Allocate").pack(side=tk.LEFT)
+        ttk.Separator(top_bar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
 
-        row2 = ttk.Frame(config_frame)
-        row2.pack(fill=tk.X, padx=10, pady=5)
-
-        ttk.Label(row2, text="Trace File:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(top_bar, text="Trace:").pack(side=tk.LEFT)
         self.trace_var = tk.StringVar(value="085.gcc.din")
-        trace_cb = ttk.Combobox(row2, textvariable=self.trace_var,
-                                values=list(TRACE_FILES.keys()), state='readonly', width=25)
-        trace_cb.pack(side=tk.LEFT, padx=(0, 20))
+        ttk.Combobox(top_bar, textvariable=self.trace_var, values=list(TRACE_FILES.keys()),
+                     state='readonly', width=18).pack(side=tk.LEFT, padx=(2, 12))
 
-        ttk.Label(row2, text="Max Lines (-1=all):").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(top_bar, text="行数:").pack(side=tk.LEFT)
         self.max_lines_var = tk.StringVar(value="100000")
-        ttk.Entry(row2, textvariable=self.max_lines_var, width=10).pack(side=tk.LEFT, padx=(0, 20))
+        ttk.Entry(top_bar, textvariable=self.max_lines_var, width=8).pack(side=tk.LEFT, padx=(2, 12))
+
+        self.geo_label = ttk.Label(top_bar, text="", font=('Consolas', 8), foreground='#888')
+        self.geo_label.pack(side=tk.LEFT, padx=(10, 0))
+
+        btn_bar = ttk.Frame(self.root)
+        btn_bar.pack(fill=tk.X, padx=10, pady=(2, 4))
 
         self.progress_var = tk.DoubleVar(value=0)
-        self.progress_bar = ttk.Progressbar(row2, variable=self.progress_var,
-                                            maximum=100, length=200)
+        self.progress_bar = ttk.Progressbar(btn_bar, variable=self.progress_var, maximum=100, length=300)
         self.progress_bar.pack(side=tk.LEFT, padx=(0, 10))
-
-        self.progress_label = ttk.Label(row2, text="")
+        self.progress_label = ttk.Label(btn_bar, text="就绪", foreground='#888')
         self.progress_label.pack(side=tk.LEFT)
 
-        ttk.Button(row2, text="Run Single", command=self._run_single).pack(
-            side=tk.RIGHT, padx=2)
-        ttk.Button(row2, text="Run Batch All", command=self._run_batch).pack(
-            side=tk.RIGHT, padx=2)
-        ttk.Button(row2, text="Stop", command=self._stop_sim).pack(
-            side=tk.RIGHT, padx=2)
+        ttk.Button(btn_bar, text="单次运行", command=self._run_single).pack(side=tk.RIGHT, padx=3)
+        ttk.Button(btn_bar, text="批量运行", command=self._run_batch).pack(side=tk.RIGHT, padx=3)
+        ttk.Button(btn_bar, text="导出 CSV", command=self._export_batch_csv).pack(side=tk.RIGHT, padx=3)
 
-        row3 = ttk.Frame(config_frame)
-        row3.pack(fill=tk.X, padx=10, pady=2)
-        self.geo_label = ttk.Label(row3, text="", font=('Consolas', 9))
-        self.geo_label.pack(side=tk.LEFT)
+        main = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
+        main.pack(fill=tk.BOTH, expand=True, padx=10, pady=(2, 10))
+
+        left = ttk.Frame(main)
+        self.stat_text = scrolledtext.ScrolledText(left, font=('Consolas', 10), wrap=tk.WORD,
+                                                     state=tk.DISABLED)
+        self.stat_text.pack(fill=tk.BOTH, expand=True)
+        main.add(left, weight=3)
+
+        right = ttk.Frame(main)
+        chart_frame = ttk.LabelFrame(right, text="命中率")
+        chart_frame.pack(fill=tk.X, padx=(0, 0), pady=(0, 4))
+        self.chart_canvas = tk.Canvas(chart_frame, height=200, bg='white')
+        self.chart_canvas.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+
+        log_frame = ttk.LabelFrame(right, text="运行日志")
+        self.log_text = scrolledtext.ScrolledText(log_frame, font=('Consolas', 8),
+                                                   wrap=tk.WORD, state=tk.DISABLED, height=10)
+        self.log_text.pack(fill=tk.BOTH, expand=True, padx=4, pady=2)
+        log_frame.pack(fill=tk.BOTH, expand=True, pady=(4, 0))
+        main.add(right, weight=1)
+
         self._update_geo_label()
-
-        for cb in [size_cb, assoc_cb, block_cb]:
-            cb.bind('<<ComboboxSelected>>', lambda e: self._update_geo_label())
-
-        nb = ttk.Notebook(self.root)
-        nb.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-
-        result_frame = ttk.Frame(nb)
-        nb.add(result_frame, text="Single Run Results")
-
-        self.stat_text = scrolledtext.ScrolledText(result_frame, font=('Consolas', 10),
-                                                     height=12, wrap=tk.WORD)
-        self.stat_text.pack(fill=tk.X, padx=5, pady=5)
-
-        chart_frame = ttk.LabelFrame(result_frame, text="Hit Rate Visualization")
-        chart_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        self.chart_canvas = tk.Canvas(chart_frame, height=150, bg='white')
-        self.chart_canvas.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-
-        batch_frame = ttk.Frame(nb)
-        nb.add(batch_frame, text="Batch Comparison")
-
-        batch_columns = ('trace', 'cache_size', 'assoc', 'block', 'accesses',
-                        'hit_rate', 'miss_rate', 'read_hit', 'write_hit',
-                        'replacements', 'writebacks')
-        self.batch_tree = ttk.Treeview(batch_frame, columns=batch_columns,
-                                        show='headings', height=15)
-        batch_headings = ['Trace', 'Cache', 'Assoc', 'Block', 'Accesses',
-                         'Hit Rate', 'Miss Rate', 'Read Hit%', 'Write Hit%',
-                         'Replacements', 'Writebacks']
-        batch_widths = [130, 70, 60, 60, 90, 80, 80, 80, 80, 100, 90]
-        for col, h, w in zip(batch_columns, batch_headings, batch_widths):
-            self.batch_tree.heading(col, text=h)
-            self.batch_tree.column(col, width=w, anchor='center')
-        self.batch_tree.column('trace', anchor='w')
-
-        batch_scroll_y = ttk.Scrollbar(batch_frame, orient=tk.VERTICAL,
-                                       command=self.batch_tree.yview)
-        self.batch_tree.configure(yscrollcommand=batch_scroll_y.set)
-        self.batch_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
-        batch_scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
-
-        batch_btn_frame = ttk.Frame(batch_frame)
-        batch_btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(batch_btn_frame, text="Export Batch CSV",
-                   command=self._export_batch_csv).pack(side=tk.RIGHT)
-
-        log_frame = ttk.Frame(nb)
-        nb.add(log_frame, text="Execution Log")
-        self.log_text = scrolledtext.ScrolledText(log_frame, font=('Consolas', 9),
-                                                   wrap=tk.WORD, state=tk.DISABLED)
-        self.log_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        for cb in top_bar.winfo_children():
+            if isinstance(cb, ttk.Combobox):
+                cb.bind('<<ComboboxSelected>>', lambda e: self._update_geo_label())
 
     def _parse_config(self):
-
         cache_size = int(self.size_var.get().replace('KB', '')) * 1024
         assoc_str = self.assoc_var.get().split()[0]
         associativity = int(assoc_str)
@@ -175,71 +134,48 @@ class CacheGUI:
         block_offset = CacheSimulator._log2(block_size)
         index_bits = CacheSimulator._log2(num_sets) if num_sets > 0 else 0
         tag_bits = 32 - index_bits - block_offset
-        text = (f"Geometry: {num_sets} sets × {associativity} ways × {block_size}B = {cache_size//1024}KB | "
-                f"Address: [Tag:{tag_bits}|Index:{index_bits}|Offset:{block_offset}]")
-        self.geo_label.config(text=text)
+        self.geo_label.config(
+            text=f"  {num_sets}组×{associativity}路×{block_size}B | Tag:{tag_bits} Index:{index_bits} Offset:{block_offset}")
 
-    def _get_trace_path(self) -> str:
-
+    def _get_trace_path(self):
         trace_name = self.trace_var.get()
         path = os.path.join(TRACE_DIR, trace_name)
-        if not os.path.exists(path):
-
-            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), trace_name)
-        return path
-
-    def _select_trace(self):
-        filepath = filedialog.askopenfilename(
-            title="Select Trace File",
-            filetypes=[("DIN files", "*.din"), ("All files", "*.*")]
-        )
-        if filepath:
-            self.trace_var.set(os.path.basename(filepath))
+        return path if os.path.exists(path) else os.path.join(os.path.dirname(os.path.abspath(__file__)), trace_name)
 
     def _save_results(self):
         filepath = filedialog.asksaveasfilename(
-            title="Save Results",
-            defaultextension=".txt",
-            filetypes=[("Text files", "*.txt"), ("CSV files", "*.csv"), ("All files", "*.*")]
-        )
+            title="保存结果", defaultextension=".txt",
+            filetypes=[("文本文件", "*.txt"), ("CSV 文件", "*.csv"), ("所有文件", "*.*")])
         if filepath:
             try:
                 with open(filepath, 'w', encoding='utf-8') as f:
                     f.write(self.stat_text.get("1.0", tk.END))
-                self._log(f"Results saved to {filepath}")
+                self._log(f"结果已保存至 {filepath}")
             except Exception as e:
-                messagebox.showerror("Save Error", str(e))
+                messagebox.showerror("保存失败", str(e))
 
     def _progress_callback(self, current, total):
         if total > 0:
-            pct = (current / total) * 100
-            self.progress_var.set(pct)
-            self.progress_label.config(text=f"{current}/{total} ({pct:.1f}%)")
+            self.progress_var.set((current / total) * 100)
+            self.progress_label.config(text=f"{current}/{total} ({current/total*100:.1f}%)")
             self.root.update_idletasks()
 
     def _run_single(self):
-
         if self.sim_running:
-            messagebox.showwarning("Running", "A simulation is already running.")
+            messagebox.showwarning("正在运行", "已有模拟正在运行中。")
             return
-
         trace_path = self._get_trace_path()
         if not os.path.exists(trace_path):
-            messagebox.showerror("Error", f"Trace file not found: {trace_path}")
+            messagebox.showerror("错误", f"Trace 文件未找到: {trace_path}")
             return
-
         cache_size, associativity, block_size = self._parse_config()
         try:
             max_lines = int(self.max_lines_var.get())
-            if max_lines == -1:
-                max_lines = -1
         except ValueError:
             max_lines = -1
 
         self.progress_var.set(0)
-        self.progress_label.config(text="Running...")
-        self._log(f"Starting: {cache_size//1024}KB, {associativity}-way, {block_size}B, trace={os.path.basename(trace_path)}")
-
+        self.progress_label.config(text="运行中...")
         self.sim_running = True
 
         def run_thread():
@@ -247,201 +183,149 @@ class CacheGUI:
                 self.sim.reconfigure(cache_size, associativity, block_size)
                 stats = self.sim.run_trace(trace_path, max_lines=max_lines,
                                           progress_callback=self._progress_callback)
-
                 self.root.after(0, lambda: self._display_results(stats))
             except Exception as e:
                 self.root.after(0, lambda: self._on_error(str(e)))
-
-        thread = threading.Thread(target=run_thread, daemon=True)
-        thread.start()
+        threading.Thread(target=run_thread, daemon=True).start()
 
     def _display_results(self, stats: CacheStats):
-
         self.sim_running = False
-        self.progress_label.config(text="Done")
+        self.progress_label.config(text="完成")
         self.progress_var.set(100)
-
         d = stats.to_dict()
-        cache_size, assoc, block = self._parse_config()
         config = self.sim.get_config_description()
-
-        text = f
+        text = RESULT_TEMPLATE.format(
+            config=config, trace_name=self.trace_var.get(), lines=f"{d['lines_processed']:,}",
+            total_accesses=d['total_accesses'], reads=d['reads'], writes=d['writes'],
+            instruction_fetches=d['instruction_fetches'], total_hits=d['total_hits'],
+            total_misses=d['total_misses'], hit_rate=d['hit_rate'], miss_rate=d['miss_rate'],
+            read_hits=d['read_hits'], read_misses=d['read_misses'], read_hit_rate=d['read_hit_rate'],
+            write_hits=d['write_hits'], write_misses=d['write_misses'], write_hit_rate=d['write_hit_rate'],
+            instruction_hits=d['instruction_hits'], instruction_misses=d['instruction_misses'],
+            replacements=d['replacements'], writebacks=d['writebacks'])
+        self.stat_text.configure(state=tk.NORMAL)
         self.stat_text.delete("1.0", tk.END)
         self.stat_text.insert("1.0", text)
+        self.stat_text.configure(state=tk.DISABLED)
+        self._draw_chart(d)
+        self._log(f"模拟完成。命中率: {d['hit_rate']*100:.2f}%")
 
-        self._draw_hitrate_chart(d)
-        self._log(f"Simulation complete. Hit rate: {d['hit_rate']*100:.2f}%")
-
-    def _draw_hitrate_chart(self, stats: dict):
-
+    def _draw_chart(self, stats: dict):
         self.chart_canvas.delete("all")
-        w = self.chart_canvas.winfo_width()
-        h = self.chart_canvas.winfo_height()
-        if w < 50:
-            w = 500
-        if h < 50:
-            h = 150
-
-        metrics = [
-            ("Total Hit Rate", stats['hit_rate']),
-            ("Read Hit Rate", stats.get('read_hit_rate', 0)),
-            ("Write Hit Rate", stats.get('write_hit_rate', 0)),
-        ]
-        bar_w = (w - 80) // len(metrics) - 20
-        x_start = 60
-        max_val = 1.0
-
-        for i, (label, val) in enumerate(metrics):
+        w = max(self.chart_canvas.winfo_width(), 200)
+        h = max(self.chart_canvas.winfo_height(), 170)
+        metrics = [("总命中率", stats['hit_rate'], '#4CAF50'),
+                   ("读命中率", stats.get('read_hit_rate', 0), '#2196F3'),
+                   ("写命中率", stats.get('write_hit_rate', 0), '#FF9800')]
+        n = len(metrics)
+        bar_w = max(30, (w - 60) // n - 30)
+        x_start = (w - (bar_w + 30) * n + 10) // 2
+        for i, (label, val, color) in enumerate(metrics):
             x = x_start + i * (bar_w + 30)
-            bar_h = int((val / max_val) * (h - 60))
-            y = h - 40 - bar_h
-
-            colors = ['#4CAF50', '#2196F3', '#FF9800']
-            self.chart_canvas.create_rectangle(x, y, x + bar_w, h - 40,
-                                               fill=colors[i], outline='')
-
-            self.chart_canvas.create_text(x + bar_w // 2, y - 10,
-                                         text=f"{val*100:.1f}%",
+            bar_h = int(val * (h - 55))
+            y = h - 30 - bar_h
+            self.chart_canvas.create_rectangle(x, y, x + bar_w, h - 30, fill=color, outline='')
+            self.chart_canvas.create_text(x + bar_w // 2, y - 8, text=f"{val*100:.1f}%",
                                          font=('Arial', 10, 'bold'))
-
-            self.chart_canvas.create_text(x + bar_w // 2, h - 20,
-                                         text=label, font=('Arial', 9),
-                                         anchor='n')
+            self.chart_canvas.create_text(x + bar_w // 2, h - 14, text=label,
+                                         font=('Arial', 8), fill='#555')
 
     def _run_batch(self):
-
         if self.sim_running:
-            messagebox.showwarning("Running", "A simulation is already running.")
+            messagebox.showwarning("正在运行", "已有模拟正在运行中。")
             return
-
         try:
             max_lines = int(self.max_lines_var.get())
-            if max_lines < 0:
-                max_lines = -1
+            if max_lines < 0: max_lines = -1
         except ValueError:
             max_lines = 100000
 
         self.batch_results.clear()
-        for item in self.batch_tree.get_children():
-            self.batch_tree.delete(item)
-
-        self._log(f"Starting batch simulation: 4 traces × 4 sizes × 4 assoc × 4 blocks = 256 runs")
-
-        self.sim_running = True
         self.progress_var.set(0)
+        self.sim_running = True
 
         def batch_thread():
             results = []
-            total_runs = len(TRACE_FILES) * len(CACHE_SIZES) * len(ASSOCIATIVITIES) * len(BLOCK_SIZES)
-            run_idx = 0
-
+            total = len(TRACE_FILES) * len(CACHE_SIZES) * len(ASSOCIATIVITIES) * len(BLOCK_SIZES)
+            idx = 0
             for trace_name in sorted(TRACE_FILES.keys()):
-                trace_path = os.path.join(TRACE_DIR, trace_name)
-                if not os.path.exists(trace_path):
-                    continue
-
-                for size_str in CACHE_SIZES:
-                    cache_size = int(size_str.replace('KB', '')) * 1024
-                    for assoc_str in ASSOCIATIVITIES:
-                        assoc = int(assoc_str.split()[0])
-                        for block_str in BLOCK_SIZES:
-                            block_size = int(block_str.replace('B', ''))
-
-                            run_idx += 1
-                            self.root.after(0, lambda ri=run_idx, tr=total_runs:
-                                           self._update_batch_progress(ri, tr))
-
+                tp = os.path.join(TRACE_DIR, trace_name)
+                if not os.path.exists(tp): continue
+                for ss in CACHE_SIZES:
+                    for sa in ASSOCIATIVITIES:
+                        for sb in BLOCK_SIZES:
+                            idx += 1
+                            self.root.after(0, lambda i=idx, t=total: self._bp(i, t))
                             try:
-                                sim = CacheSimulator(cache_size, assoc, block_size)
-                                stats = sim.run_trace(trace_path, max_lines=max_lines)
-                                d = stats.to_dict()
-                                d['trace'] = trace_name
-                                d['cache_size'] = size_str
-                                d['associativity'] = assoc_str
-                                d['block_size'] = block_str
-                                results.append(d)
-                                self._log(f"[{run_idx}/{total_runs}] {trace_name} {size_str} {assoc_str}-way {block_str}B → Hit: {d['hit_rate']*100:.2f}%")
+                                sim = CacheSimulator(int(ss.replace('KB',''))*1024,
+                                                     int(sa.split()[0]), int(sb.replace('B','')))
+                                s = sim.run_trace(tp, max_lines=max_lines).to_dict()
+                                s['trace'] = trace_name
+                                s['cache_size'] = ss; s['associativity'] = sa; s['block_size'] = sb
+                                results.append(s)
                             except Exception as e:
-                                self._log(f"[{run_idx}/{total_runs}] ERROR: {trace_name} {size_str} {assoc_str}-way {block_str}B → {e}")
-
+                                self._log(f"[{idx}/{total}] 错误: {trace_name} → {e}")
             self.batch_results = results
-            self.root.after(0, lambda: self._display_batch_results())
+            self.root.after(0, lambda: self._display_batch())
 
-        thread = threading.Thread(target=batch_thread, daemon=True)
-        thread.start()
+        threading.Thread(target=batch_thread, daemon=True).start()
 
-    def _update_batch_progress(self, current, total):
+    def _bp(self, current, total):
         self.progress_var.set((current / total) * 100)
-        self.progress_label.config(text=f"Batch: {current}/{total}")
+        self.progress_label.config(text=f"批量: {current}/{total}")
         self.root.update_idletasks()
 
-    def _display_batch_results(self):
-
+    def _display_batch(self):
         self.sim_running = False
-        self.progress_label.config(text="Batch complete")
+        self.progress_label.config(text=f"批量完成 ({len(self.batch_results)}组)")
         self.progress_var.set(100)
+        self._log(f"批量完成: {len(self.batch_results)} 组结果。")
 
-        for item in self.batch_tree.get_children():
-            self.batch_tree.delete(item)
-
+        top = tk.Toplevel(self.root)
+        top.title("批量对比结果")
+        top.geometry("1000x500")
+        cols = ('trace', 'cache_size', 'assoc', 'block', 'accesses',
+                'hit_rate', 'miss_rate', 'read_hit', 'write_hit', 'replacements', 'writebacks')
+        tree = ttk.Treeview(top, columns=cols, show='headings')
+        heads = ['Trace', 'Cache大小', '相联度', '块大小', '访问次数',
+                 '命中率', '缺失率', '读命中率', '写命中率', '替换次数', '写回次数']
+        widths = [130, 75, 65, 65, 90, 80, 80, 80, 80, 100, 90]
+        for c, h, w in zip(cols, heads, widths):
+            tree.heading(c, text=h); tree.column(c, width=w, anchor='center')
+        tree.column('trace', anchor='w')
+        tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         for r in self.batch_results:
-            self.batch_tree.insert('', tk.END, values=(
-                r['trace'],
-                r['cache_size'],
-                r['associativity'],
-                r['block_size'],
-                f"{r['total_accesses']:,}",
-                f"{r['hit_rate']*100:.2f}%",
-                f"{r['miss_rate']*100:.2f}%",
-                f"{r['read_hit_rate']*100:.2f}%",
-                f"{r['write_hit_rate']*100:.2f}%",
-                f"{r['replacements']:,}",
-                f"{r['writebacks']:,}",
-            ))
-
-        self._log(f"Batch complete: {len(self.batch_results)} results.")
-
-    def _stop_sim(self):
-
-        self.sim_running = False
-        self._log("Simulation stop requested.")
+            tree.insert('', tk.END, values=(
+                r['trace'], r['cache_size'], r['associativity'], r['block_size'],
+                f"{r['total_accesses']:,}", f"{r['hit_rate']*100:.2f}%", f"{r['miss_rate']*100:.2f}%",
+                f"{r['read_hit_rate']*100:.2f}%", f"{r['write_hit_rate']*100:.2f}%",
+                f"{r['replacements']:,}", f"{r['writebacks']:,}"))
 
     def _on_error(self, msg: str):
         self.sim_running = False
-        self.progress_label.config(text="Error")
-        messagebox.showerror("Simulation Error", msg)
+        self.progress_label.config(text="出错")
+        messagebox.showerror("模拟错误", msg)
 
     def _export_batch_csv(self):
-
         if not self.batch_results:
-            messagebox.showwarning("No Data", "Run batch simulation first.")
+            messagebox.showwarning("无数据", "请先运行批量测试。")
             return
-
         filepath = filedialog.asksaveasfilename(
-            title="Export Batch Results",
-            defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
-        )
-        if not filepath:
-            return
-
+            title="导出批量结果", defaultextension=".csv",
+            filetypes=[("CSV 文件", "*.csv"), ("所有文件", "*.*")])
+        if not filepath: return
         import csv
         with open(filepath, 'w', newline='', encoding='utf-8-sig') as f:
-            if self.batch_results:
-                fields = ['trace', 'cache_size', 'associativity', 'block_size',
-                         'total_accesses', 'hit_rate', 'miss_rate', 'read_hit_rate',
-                         'write_hit_rate', 'reads', 'writes', 'instruction_fetches',
-                         'read_hits', 'read_misses', 'write_hits', 'write_misses',
-                         'instruction_hits', 'instruction_misses', 'replacements', 'writebacks']
-                writer = csv.DictWriter(f, fieldnames=fields, extrasaction='ignore')
-                writer.writeheader()
-                writer.writerows(self.batch_results)
-
-        self._log(f"Batch results exported to {filepath}")
-        messagebox.showinfo("Export", f"Results saved to {filepath}")
+            fields = ['trace', 'cache_size', 'associativity', 'block_size',
+                     'total_accesses', 'hit_rate', 'miss_rate', 'read_hit_rate',
+                     'write_hit_rate', 'reads', 'writes', 'instruction_fetches',
+                     'read_hits', 'read_misses', 'write_hits', 'write_misses',
+                     'instruction_hits', 'instruction_misses', 'replacements', 'writebacks']
+            csv.DictWriter(f, fieldnames=fields, extrasaction='ignore').writerows(self.batch_results)
+        self._log(f"批量结果已导出至 {filepath}")
+        messagebox.showinfo("导出成功", f"结果已保存至 {filepath}")
 
     def _log(self, msg: str):
-
         self.log_text.configure(state=tk.NORMAL)
         self.log_text.insert(tk.END, msg + '\n')
         self.log_text.see(tk.END)
