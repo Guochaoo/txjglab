@@ -1,10 +1,3 @@
-"""
-Cache Simulator - GUI
-=====================
-Tkinter-based graphical interface for the Cache simulator.
-Supports: parameter configuration, trace file selection, execution, and result visualization.
-"""
-
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import threading
@@ -12,10 +5,6 @@ import os
 
 from cache_engine import CacheSimulator, CacheStats
 
-
-# ============================================================
-# Default trace directory
-# ============================================================
 TRACE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'trace')
 
 TRACE_FILES = {
@@ -29,13 +18,7 @@ CACHE_SIZES = ["8KB", "16KB", "32KB", "64KB"]
 ASSOCIATIVITIES = ["1 (Direct)", "2", "4", "8"]
 BLOCK_SIZES = ["16B", "32B", "64B", "128B"]
 
-
-# ============================================================
-# Main GUI Application
-# ============================================================
-
 class CacheGUI:
-    """Main GUI window for the Cache simulator."""
 
     def __init__(self):
         self.sim = CacheSimulator()
@@ -53,9 +36,6 @@ class CacheGUI:
 
         self.root.mainloop()
 
-    # ----------------------------------------------------------
-    # Menu bar
-    # ----------------------------------------------------------
     def _build_menu(self):
         menubar = tk.Menu(self.root)
         file_menu = tk.Menu(menubar, tearoff=0)
@@ -66,15 +46,11 @@ class CacheGUI:
         menubar.add_cascade(label="File", menu=file_menu)
         self.root.config(menu=menubar)
 
-    # ----------------------------------------------------------
-    # Layout
-    # ----------------------------------------------------------
     def _build_layout(self):
-        # Top: Configuration panel
+
         config_frame = ttk.LabelFrame(self.root, text="Cache Configuration")
         config_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
 
-        # Row 1: cache_size, associativity, block_size
         row1 = ttk.Frame(config_frame)
         row1.pack(fill=tk.X, padx=10, pady=5)
 
@@ -99,7 +75,6 @@ class CacheGUI:
         ttk.Label(row1, text="Replacement: LRU").pack(side=tk.LEFT, padx=(0, 20))
         ttk.Label(row1, text="Write Policy: Write-Allocate").pack(side=tk.LEFT)
 
-        # Row 2: Trace selection + run buttons
         row2 = ttk.Frame(config_frame)
         row2.pack(fill=tk.X, padx=10, pady=5)
 
@@ -113,7 +88,6 @@ class CacheGUI:
         self.max_lines_var = tk.StringVar(value="100000")
         ttk.Entry(row2, textvariable=self.max_lines_var, width=10).pack(side=tk.LEFT, padx=(0, 20))
 
-        # Progress bar
         self.progress_var = tk.DoubleVar(value=0)
         self.progress_bar = ttk.Progressbar(row2, variable=self.progress_var,
                                             maximum=100, length=200)
@@ -122,7 +96,6 @@ class CacheGUI:
         self.progress_label = ttk.Label(row2, text="")
         self.progress_label.pack(side=tk.LEFT)
 
-        # Buttons
         ttk.Button(row2, text="Run Single", command=self._run_single).pack(
             side=tk.RIGHT, padx=2)
         ttk.Button(row2, text="Run Batch All", command=self._run_batch).pack(
@@ -130,41 +103,33 @@ class CacheGUI:
         ttk.Button(row2, text="Stop", command=self._stop_sim).pack(
             side=tk.RIGHT, padx=2)
 
-        # Row 3: Cache geometry info
         row3 = ttk.Frame(config_frame)
         row3.pack(fill=tk.X, padx=10, pady=2)
         self.geo_label = ttk.Label(row3, text="", font=('Consolas', 9))
         self.geo_label.pack(side=tk.LEFT)
         self._update_geo_label()
 
-        # Bind combobox changes
         for cb in [size_cb, assoc_cb, block_cb]:
             cb.bind('<<ComboboxSelected>>', lambda e: self._update_geo_label())
 
-        # Bottom: Results area (notebook)
         nb = ttk.Notebook(self.root)
         nb.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        # Tab 1: Single run results
         result_frame = ttk.Frame(nb)
         nb.add(result_frame, text="Single Run Results")
 
-        # Statistics display
         self.stat_text = scrolledtext.ScrolledText(result_frame, font=('Consolas', 10),
                                                      height=12, wrap=tk.WORD)
         self.stat_text.pack(fill=tk.X, padx=5, pady=5)
 
-        # Chart area (simple text-based chart)
         chart_frame = ttk.LabelFrame(result_frame, text="Hit Rate Visualization")
         chart_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.chart_canvas = tk.Canvas(chart_frame, height=150, bg='white')
         self.chart_canvas.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # Tab 2: Batch comparison
         batch_frame = ttk.Frame(nb)
         nb.add(batch_frame, text="Batch Comparison")
 
-        # Batch results tree
         batch_columns = ('trace', 'cache_size', 'assoc', 'block', 'accesses',
                         'hit_rate', 'miss_rate', 'read_hit', 'write_hit',
                         'replacements', 'writebacks')
@@ -185,24 +150,19 @@ class CacheGUI:
         self.batch_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
         batch_scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Export batch button
         batch_btn_frame = ttk.Frame(batch_frame)
         batch_btn_frame.pack(fill=tk.X, padx=5, pady=5)
         ttk.Button(batch_btn_frame, text="Export Batch CSV",
                    command=self._export_batch_csv).pack(side=tk.RIGHT)
 
-        # Tab 3: Log
         log_frame = ttk.Frame(nb)
         nb.add(log_frame, text="Execution Log")
         self.log_text = scrolledtext.ScrolledText(log_frame, font=('Consolas', 9),
                                                    wrap=tk.WORD, state=tk.DISABLED)
         self.log_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-    # ----------------------------------------------------------
-    # Helpers
-    # ----------------------------------------------------------
     def _parse_config(self):
-        """Parse current configuration from GUI."""
+
         cache_size = int(self.size_var.get().replace('KB', '')) * 1024
         assoc_str = self.assoc_var.get().split()[0]
         associativity = int(assoc_str)
@@ -220,11 +180,11 @@ class CacheGUI:
         self.geo_label.config(text=text)
 
     def _get_trace_path(self) -> str:
-        """Get the full path to the selected trace file."""
+
         trace_name = self.trace_var.get()
         path = os.path.join(TRACE_DIR, trace_name)
         if not os.path.exists(path):
-            # Try in the lab4 directory directly
+
             path = os.path.join(os.path.dirname(os.path.abspath(__file__)), trace_name)
         return path
 
@@ -250,9 +210,6 @@ class CacheGUI:
             except Exception as e:
                 messagebox.showerror("Save Error", str(e))
 
-    # ----------------------------------------------------------
-    # Progress callback
-    # ----------------------------------------------------------
     def _progress_callback(self, current, total):
         if total > 0:
             pct = (current / total) * 100
@@ -260,11 +217,8 @@ class CacheGUI:
             self.progress_label.config(text=f"{current}/{total} ({pct:.1f}%)")
             self.root.update_idletasks()
 
-    # ----------------------------------------------------------
-    # Run single simulation
-    # ----------------------------------------------------------
     def _run_single(self):
-        """Run a single cache simulation with current parameters."""
+
         if self.sim_running:
             messagebox.showwarning("Running", "A simulation is already running.")
             return
@@ -278,7 +232,7 @@ class CacheGUI:
         try:
             max_lines = int(self.max_lines_var.get())
             if max_lines == -1:
-                max_lines = -1  # all lines
+                max_lines = -1
         except ValueError:
             max_lines = -1
 
@@ -294,7 +248,6 @@ class CacheGUI:
                 stats = self.sim.run_trace(trace_path, max_lines=max_lines,
                                           progress_callback=self._progress_callback)
 
-                # Display results in main thread
                 self.root.after(0, lambda: self._display_results(stats))
             except Exception as e:
                 self.root.after(0, lambda: self._on_error(str(e)))
@@ -303,7 +256,7 @@ class CacheGUI:
         thread.start()
 
     def _display_results(self, stats: CacheStats):
-        """Display simulation results."""
+
         self.sim_running = False
         self.progress_label.config(text="Done")
         self.progress_var.set(100)
@@ -312,50 +265,15 @@ class CacheGUI:
         cache_size, assoc, block = self._parse_config()
         config = self.sim.get_config_description()
 
-        text = f"""
-{'='*70}
-  CACHE SIMULATION RESULTS
-{'='*70}
-Configuration: {config}
-Trace File: {self.trace_var.get()}
-Lines Processed: {d.get('lines_processed', self.sim.lines_processed)}
-
-{'─'*70}
-  ACCESS SUMMARY
-{'─'*70}
-  Total Accesses:        {d['total_accesses']:>12,}
-    - Reads (load):       {d['reads']:>12,}
-    - Writes (store):     {d['writes']:>12,}
-    - Instruction Fetches:{d['instruction_fetches']:>12,}
-
-{'─'*70}
-  HIT / MISS STATISTICS
-{'─'*70}
-  Total Hits:            {d['total_hits']:>12,}   ({d['hit_rate']*100:6.2f}%)
-  Total Misses:          {d['total_misses']:>12,}   ({d['miss_rate']*100:6.2f}%)
-  Read Hits:             {d['read_hits']:>12,}   ({d['read_hit_rate']*100:6.2f}%)
-  Read Misses:           {d['read_misses']:>12,}
-  Write Hits:            {d['write_hits']:>12,}   ({d['write_hit_rate']*100:6.2f}%)
-  Write Misses:          {d['write_misses']:>12,}
-  Instruction Hits:      {d['instruction_hits']:>12,}
-  Instruction Misses:    {d['instruction_misses']:>12,}
-
-{'─'*70}
-  CACHE OPERATIONS
-{'─'*70}
-  Replacements (evictions): {d['replacements']:>12,}
-  Writebacks (dirty evict): {d['writebacks']:>12,}
-{'='*70}
-"""
+        text = f
         self.stat_text.delete("1.0", tk.END)
         self.stat_text.insert("1.0", text)
 
-        # Draw chart
         self._draw_hitrate_chart(d)
         self._log(f"Simulation complete. Hit rate: {d['hit_rate']*100:.2f}%")
 
     def _draw_hitrate_chart(self, stats: dict):
-        """Draw a simple bar chart on the canvas."""
+
         self.chart_canvas.delete("all")
         w = self.chart_canvas.winfo_width()
         h = self.chart_canvas.winfo_height()
@@ -364,7 +282,6 @@ Lines Processed: {d.get('lines_processed', self.sim.lines_processed)}
         if h < 50:
             h = 150
 
-        # Bars
         metrics = [
             ("Total Hit Rate", stats['hit_rate']),
             ("Read Hit Rate", stats.get('read_hit_rate', 0)),
@@ -379,24 +296,20 @@ Lines Processed: {d.get('lines_processed', self.sim.lines_processed)}
             bar_h = int((val / max_val) * (h - 60))
             y = h - 40 - bar_h
 
-            # Bar
             colors = ['#4CAF50', '#2196F3', '#FF9800']
             self.chart_canvas.create_rectangle(x, y, x + bar_w, h - 40,
                                                fill=colors[i], outline='')
-            # Value
+
             self.chart_canvas.create_text(x + bar_w // 2, y - 10,
                                          text=f"{val*100:.1f}%",
                                          font=('Arial', 10, 'bold'))
-            # Label
+
             self.chart_canvas.create_text(x + bar_w // 2, h - 20,
                                          text=label, font=('Arial', 9),
                                          anchor='n')
 
-    # ----------------------------------------------------------
-    # Batch simulation
-    # ----------------------------------------------------------
     def _run_batch(self):
-        """Run all parameter combinations for all traces."""
+
         if self.sim_running:
             messagebox.showwarning("Running", "A simulation is already running.")
             return
@@ -406,7 +319,7 @@ Lines Processed: {d.get('lines_processed', self.sim.lines_processed)}
             if max_lines < 0:
                 max_lines = -1
         except ValueError:
-            max_lines = 100000  # default for batch
+            max_lines = 100000
 
         self.batch_results.clear()
         for item in self.batch_tree.get_children():
@@ -463,7 +376,7 @@ Lines Processed: {d.get('lines_processed', self.sim.lines_processed)}
         self.root.update_idletasks()
 
     def _display_batch_results(self):
-        """Display batch simulation results in the tree."""
+
         self.sim_running = False
         self.progress_label.config(text="Batch complete")
         self.progress_var.set(100)
@@ -489,8 +402,7 @@ Lines Processed: {d.get('lines_processed', self.sim.lines_processed)}
         self._log(f"Batch complete: {len(self.batch_results)} results.")
 
     def _stop_sim(self):
-        """Stop running simulation."""
-        # Note: this doesn't actually stop the thread, just marks it
+
         self.sim_running = False
         self._log("Simulation stop requested.")
 
@@ -500,7 +412,7 @@ Lines Processed: {d.get('lines_processed', self.sim.lines_processed)}
         messagebox.showerror("Simulation Error", msg)
 
     def _export_batch_csv(self):
-        """Export batch results to CSV."""
+
         if not self.batch_results:
             messagebox.showwarning("No Data", "Run batch simulation first.")
             return
@@ -529,16 +441,11 @@ Lines Processed: {d.get('lines_processed', self.sim.lines_processed)}
         messagebox.showinfo("Export", f"Results saved to {filepath}")
 
     def _log(self, msg: str):
-        """Add message to log."""
+
         self.log_text.configure(state=tk.NORMAL)
         self.log_text.insert(tk.END, msg + '\n')
         self.log_text.see(tk.END)
         self.log_text.configure(state=tk.DISABLED)
-
-
-# ============================================================
-# Entry point
-# ============================================================
 
 if __name__ == '__main__':
     CacheGUI()

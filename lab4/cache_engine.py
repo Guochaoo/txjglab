@@ -1,37 +1,15 @@
-"""
-Cache Simulator - Core Engine
-==============================
-Self-designed Module A implementation for Lab 4.
-Simulates a configurable cache with LRU replacement and write-allocate policy.
-
-Parameters:
-  - cache_size: 8KB, 16KB, 32KB, 64KB
-  - associativity: 1 (direct), 2, 4, 8
-  - block_size: 16B, 32B, 64B, 128B
-
-Trace format: access_type address size/data
-  - access_type: 0=load, 1=store, 2=fetch instruction
-  - address: 32-bit hex
-  - size/data: hex value (4B for data)
-"""
-
 from dataclasses import dataclass, field
 from typing import List, Dict, Tuple, Optional
 import struct
 import time
 
-
-# ============================================================
-# Cache Data Structures
-# ============================================================
-
 @dataclass
 class CacheLine:
-    """A single cache block/line."""
+
     tag: int = 0
     valid: bool = False
     dirty: bool = False
-    lru_age: int = 0         # Higher = more recently used
+    lru_age: int = 0
 
     def reset(self):
         self.tag = 0
@@ -39,10 +17,9 @@ class CacheLine:
         self.dirty = False
         self.lru_age = 0
 
-
 @dataclass
 class CacheSet:
-    """A set of cache lines (ways)."""
+
     ways: List[CacheLine] = field(default_factory=list)
 
     def __init__(self, associativity: int):
@@ -50,34 +27,29 @@ class CacheSet:
         self._lru_counter = 0
 
     def access(self, tag: int, is_write: bool = False) -> Tuple[bool, bool, bool]:
-        """
-        Look up a tag in this set.
-        Returns: (hit: bool, replaced: bool, was_dirty: bool)
-        """
-        # Check for hit
+
         for way in self.ways:
             if way.valid and way.tag == tag:
-                # Hit: update LRU and dirty flag
+
                 self._lru_counter += 1
                 way.lru_age = self._lru_counter
                 if is_write:
                     way.dirty = True
                 return True, False, False
 
-        # Miss: find LRU way to evict
         lru_way = None
         lru_min_age = float('inf')
         for way in self.ways:
             if not way.valid:
-                # Empty way available - no replacement needed
+
                 lru_way = way
                 break
             if way.lru_age < lru_min_age:
                 lru_min_age = way.lru_age
                 lru_way = way
 
-        replaced = lru_way.valid      # True if evicting a valid line
-        was_dirty = lru_way.dirty     # True if evicted line was dirty → writeback
+        replaced = lru_way.valid
+        was_dirty = lru_way.dirty
         lru_way.valid = True
         lru_way.tag = tag
         lru_way.dirty = is_write
@@ -87,20 +59,15 @@ class CacheSet:
         return False, replaced, was_dirty
 
     def find_line(self, tag: int) -> Optional[CacheLine]:
-        """Find a cache line by tag, or None if not present."""
+
         for way in self.ways:
             if way.valid and way.tag == tag:
                 return way
         return None
 
-
-# ============================================================
-# Cache Statistics
-# ============================================================
-
 @dataclass
 class CacheStats:
-    """Cache access statistics."""
+
     total_accesses: int = 0
     reads: int = 0
     writes: int = 0
@@ -108,12 +75,12 @@ class CacheStats:
     write_hits: int = 0
     read_misses: int = 0
     write_misses: int = 0
-    replacements: int = 0          # evictions of dirty/valid lines
-    writebacks: int = 0            # dirty evictions
+    replacements: int = 0
+    writebacks: int = 0
     instruction_fetches: int = 0
     instruction_hits: int = 0
     instruction_misses: int = 0
-    lines_processed: int = 0       # total trace lines processed
+    lines_processed: int = 0
 
     @property
     def total_hits(self) -> int:
@@ -162,21 +129,7 @@ class CacheStats:
             'lines_processed': self.lines_processed,
         }
 
-
-# ============================================================
-# Cache Simulator
-# ============================================================
-
 class CacheSimulator:
-    """
-    Configurable cache simulator.
-
-    Cache geometry:
-      - num_sets = cache_size / (associativity * block_size)
-      - block_offset_bits = log2(block_size)
-      - index_bits = log2(num_sets)
-      - tag_bits = 32 - index_bits - block_offset_bits
-    """
 
     VALID_SIZES = {8 * 1024, 16 * 1024, 32 * 1024, 64 * 1024}
     VALID_ASSOC = {1, 2, 4, 8}
@@ -185,14 +138,7 @@ class CacheSimulator:
     def __init__(self, cache_size: int = 16 * 1024,
                  associativity: int = 4,
                  block_size: int = 32):
-        """
-        Initialize the cache simulator.
 
-        Args:
-            cache_size: Total cache size in bytes (8K, 16K, 32K, 64K)
-            associativity: Number of ways per set (1, 2, 4, 8)
-            block_size: Block size in bytes (16, 32, 64, 128)
-        """
         if cache_size not in self.VALID_SIZES:
             raise ValueError(f"cache_size must be one of {self.VALID_SIZES}")
         if associativity not in self.VALID_ASSOC:
@@ -204,31 +150,26 @@ class CacheSimulator:
         self.associativity = associativity
         self.block_size = block_size
 
-        # Compute cache geometry
         self.num_sets = cache_size // (associativity * block_size)
         self.block_offset_bits = self._log2(block_size)
         self.index_bits = self._log2(self.num_sets) if self.num_sets > 0 else 0
         self.tag_bits = 32 - self.index_bits - self.block_offset_bits
 
-        # Create bit masks
         self.block_mask = (1 << self.block_offset_bits) - 1
         self.index_mask = ((1 << self.index_bits) - 1) if self.index_bits > 0 else 0
         self.tag_mask = 0xFFFFFFFF & ~(self.block_mask | (self.index_mask << self.block_offset_bits))
 
-        # Cache storage: list of sets
         self.sets: List[CacheSet] = [
             CacheSet(associativity) for _ in range(max(1, self.num_sets))
         ]
 
-        # Statistics
         self.stats = CacheStats()
 
-        # Progress tracking
         self.lines_processed = 0
 
     @staticmethod
     def _log2(x: int) -> int:
-        """Compute floor(log2(x))."""
+
         if x <= 1:
             return 0
         bits = 0
@@ -238,27 +179,14 @@ class CacheSimulator:
         return bits
 
     def _decompose_address(self, address: int) -> Tuple[int, int, int]:
-        """
-        Decompose a 32-bit address into (tag, index, block_offset).
 
-        For direct-mapped (num_sets=1), index is always 0.
-        """
         block_offset = address & self.block_mask
         index = (address >> self.block_offset_bits) & self.index_mask if self.index_bits > 0 else 0
         tag = address >> (self.block_offset_bits + self.index_bits) if (self.block_offset_bits + self.index_bits) > 0 else address
         return tag, index, block_offset
 
     def access(self, address: int, access_type: int) -> Tuple[bool, bool, bool]:
-        """
-        Perform a cache access.
 
-        Args:
-            address: 32-bit physical address
-            access_type: 0=load, 1=store, 2=instruction fetch
-
-        Returns:
-            (hit: bool, replaced: bool, writeback: bool)
-        """
         tag, index, offset = self._decompose_address(address)
         is_write = (access_type == 1)
 
@@ -281,12 +209,12 @@ class CacheSimulator:
             elif access_type == 2:
                 self.stats.instruction_hits += 1
         else:
-            # Miss
+
             if access_type == 0:
                 self.stats.read_misses += 1
             elif access_type == 1:
                 self.stats.write_misses += 1
-                # Write-allocate: handled by access() bringing block into cache
+
             elif access_type == 2:
                 self.stats.instruction_misses += 1
 
@@ -299,21 +227,10 @@ class CacheSimulator:
 
     def run_trace(self, trace_file: str, max_lines: int = -1,
                   progress_callback=None) -> CacheStats:
-        """
-        Run a full trace file through the cache simulator.
 
-        Args:
-            trace_file: Path to the trace .din file
-            max_lines: Max lines to process (-1 = all)
-            progress_callback: Optional callback(processed_lines, total_lines)
-
-        Returns:
-            CacheStats after processing
-        """
         self.reset_stats()
         start_time = time.time()
 
-        # Count total lines first for progress
         total_lines = 0
         if progress_callback:
             with open(trace_file, 'r') as f:
@@ -351,12 +268,12 @@ class CacheSimulator:
         return self.stats
 
     def reset_stats(self):
-        """Reset statistics."""
+
         self.stats = CacheStats()
         self.lines_processed = 0
 
     def reset_cache(self):
-        """Reset the entire cache (invalidate all lines)."""
+
         for s in self.sets:
             for way in s.ways:
                 way.reset()
@@ -364,7 +281,7 @@ class CacheSimulator:
 
     def reconfigure(self, cache_size: int = None, associativity: int = None,
                     block_size: int = None):
-        """Reconfigure cache parameters and reinitialize."""
+
         if cache_size is not None:
             self.cache_size = cache_size
         if associativity is not None:
@@ -385,7 +302,7 @@ class CacheSimulator:
         self.reset_stats()
 
     def get_config_description(self) -> str:
-        """Return a human-readable description of the cache configuration."""
+
         if self.associativity == 1:
             assoc_str = "Direct-mapped"
         elif self.associativity == self.cache_size // self.block_size:

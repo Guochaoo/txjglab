@@ -6,38 +6,11 @@ from tomasulo_engine import (
 )
 from typing import Optional
 
+TEST_NO_CONFLICT = 
 
-TEST_NO_CONFLICT = """# 测试1: 无冲突 — 所有指令相互独立
-LD F0, 0(R1)
-LD F2, 8(R1)
-LD F4, 16(R1)
-ADD.D F6, F0, F2
-MUL.D F8, F0, F4
-SUB.D F10, F2, F4
-DIV.D F12, F8, F6
-SD F10, 32(R1)
-SD F12, 40(R1)
-"""
+TEST_RAW = 
 
-TEST_RAW = """# 测试2: RAW冲突 — 真数据依赖链
-LD F0, 0(R1)
-ADD.D F2, F0, F4
-MUL.D F6, F2, F8
-SUB.D F10, F6, F0
-DIV.D F12, F10, F2
-SD F12, 32(R1)
-"""
-
-TEST_WAR = """# 测试3: WAR冲突 — 反依赖 (Tomasulo通过重命名消除)
-MUL.D F0, F2, F4
-ADD.D F6, F0, F8
-SUB.D F0, F10, F12
-DIV.D F14, F0, F6
-LD F16, 0(R1)
-MUL.D F18, F16, F14
-SD F0, 32(R1)
-SD F18, 40(R1)
-"""
+TEST_WAR = 
 
 TEST_PROGRAMS = {
     "无冲突": TEST_NO_CONFLICT,
@@ -45,7 +18,6 @@ TEST_PROGRAMS = {
     "WAR冲突": TEST_WAR,
 }
 
-# 统计项中英文映射
 STAT_LABELS = {
     'total_instructions': '总指令数',
     'total_cycles': '总周期数',
@@ -56,9 +28,7 @@ STAT_LABELS = {
     'cpi': 'CPI',
 }
 
-
 class TomasuloGUI:
-    """Tomasulo 模拟器主窗口。"""
 
     def __init__(self):
         self.sim = TomasuloSimulator()
@@ -75,9 +45,6 @@ class TomasuloGUI:
 
         self.root.mainloop()
 
-    # ----------------------------------------------------------
-    # 菜单栏
-    # ----------------------------------------------------------
     def _build_menu(self):
         menubar = tk.Menu(self.root)
 
@@ -96,9 +63,6 @@ class TomasuloGUI:
 
         self.root.config(menu=menubar)
 
-    # ----------------------------------------------------------
-    # 页面布局
-    # ----------------------------------------------------------
     def _build_layout(self):
         main_pw = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
         main_pw.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -108,7 +72,6 @@ class TomasuloGUI:
         main_pw.add(left_frame, weight=1)
         main_pw.add(right_frame, weight=2)
 
-        # ---- 左侧: 代码编辑器 + 控制按钮 + 统计 ----
         code_frame = ttk.LabelFrame(left_frame, text="程序代码 (MIPS 浮点汇编)")
         code_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
 
@@ -126,7 +89,6 @@ class TomasuloGUI:
         code_frame.grid_rowconfigure(0, weight=1)
         code_frame.grid_columnconfigure(0, weight=1)
 
-        # 控制按钮
         ctrl_frame = ttk.LabelFrame(left_frame, text="控制")
         ctrl_frame.pack(fill=tk.X, pady=(0, 5))
 
@@ -143,7 +105,6 @@ class TomasuloGUI:
         ttk.Button(btn_row1, text="重置", command=self._reset).pack(
             side=tk.LEFT, padx=2)
 
-        # 快照浏览
         btn_row2 = ttk.Frame(ctrl_frame)
         btn_row2.pack(fill=tk.X, padx=5, pady=3)
         ttk.Button(btn_row2, text="◀ 上一周期", command=self._prev_cycle).pack(
@@ -155,7 +116,6 @@ class TomasuloGUI:
         ttk.Label(btn_row2, textvariable=self.cycle_var, font=('Arial', 12, 'bold'),
                   foreground='blue').pack(side=tk.LEFT)
 
-        # 统计信息
         stat_frame = ttk.LabelFrame(left_frame, text="统计信息")
         stat_frame.pack(fill=tk.X)
 
@@ -168,7 +128,6 @@ class TomasuloGUI:
             ttk.Label(stat_frame, textvariable=var, font=('Arial', 9, 'bold')).grid(
                 row=i // 2, column=(i % 2) * 2 + 1, sticky='w', padx=5, pady=1)
 
-        # ---- 右侧: 状态标签页 ----
         self.notebook = ttk.Notebook(right_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
@@ -177,29 +136,22 @@ class TomasuloGUI:
         self._build_mem_tab()
         self._build_log_tab()
 
-    # ----------------------------------------------------------
-    # 保留站标签页
-    # ----------------------------------------------------------
     def _build_rs_tab(self):
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="保留站")
 
-        # 浮点加法RS
         ttk.Label(frame, text="浮点加法保留站", font=('Microsoft YaHei', 10, 'bold')).grid(
             row=0, column=0, sticky='w', padx=5, pady=(5, 2))
         self.rs_tree_add = self._create_rs_tree(frame, row=1, col=0)
 
-        # 浮点乘除RS
         ttk.Label(frame, text="浮点乘除保留站", font=('Microsoft YaHei', 10, 'bold')).grid(
             row=2, column=0, sticky='w', padx=5, pady=(10, 2))
         self.rs_tree_mul = self._create_rs_tree(frame, row=3, col=0)
 
-        # Load缓冲器
         ttk.Label(frame, text="Load 缓冲器", font=('Microsoft YaHei', 10, 'bold')).grid(
             row=0, column=1, sticky='w', padx=5, pady=(5, 2))
         self.rs_tree_load = self._create_rs_tree(frame, row=1, col=1)
 
-        # Store缓冲器
         ttk.Label(frame, text="Store 缓冲器", font=('Microsoft YaHei', 10, 'bold')).grid(
             row=2, column=1, sticky='w', padx=5, pady=(10, 2))
         self.rs_tree_store = self._create_rs_tree(frame, row=3, col=1)
@@ -225,9 +177,6 @@ class TomasuloGUI:
         scroll.grid(row=row, column=col, sticky='nse')
         return tree
 
-    # ----------------------------------------------------------
-    # 寄存器状态标签页
-    # ----------------------------------------------------------
     def _build_reg_tab(self):
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="寄存器状态")
@@ -249,9 +198,6 @@ class TomasuloGUI:
         self.reg_tree.configure(yscrollcommand=scroll.set)
         scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-    # ----------------------------------------------------------
-    # 内存标签页
-    # ----------------------------------------------------------
     def _build_mem_tab(self):
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="内存")
@@ -268,9 +214,6 @@ class TomasuloGUI:
         self.mem_tree.configure(yscrollcommand=scroll.set)
         scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-    # ----------------------------------------------------------
-    # 执行日志标签页
-    # ----------------------------------------------------------
     def _build_log_tab(self):
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="执行日志")
@@ -279,11 +222,8 @@ class TomasuloGUI:
                                                    wrap=tk.WORD, state=tk.DISABLED)
         self.log_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-    # ==========================================================
-    # 操作
-    # ==========================================================
     def _load_program(self):
-        """从编辑器解析程序并加载到模拟器。"""
+
         code = self.code_text.get("1.0", tk.END)
         try:
             program = parse_program(code)
@@ -298,7 +238,7 @@ class TomasuloGUI:
             messagebox.showerror("解析错误", str(e))
 
     def _load_file(self):
-        """从文件加载程序。"""
+
         filepath = filedialog.askopenfilename(
             title="打开程序文件",
             filetypes=[("文本文件", "*.txt"), ("汇编文件", "*.s *.asm"), ("所有文件", "*.*")]
@@ -314,7 +254,7 @@ class TomasuloGUI:
             messagebox.showerror("文件错误", str(e))
 
     def _save_log(self):
-        """保存执行日志到文件。"""
+
         filepath = filedialog.asksaveasfilename(
             title="保存执行日志",
             defaultextension=".txt",
@@ -325,13 +265,13 @@ class TomasuloGUI:
                 f.write(self.log_text.get("1.0", tk.END))
 
     def _apply_test_program(self, name: str):
-        """加载预置测试程序。"""
+
         self.code_text.delete("1.0", tk.END)
         self.code_text.insert("1.0", TEST_PROGRAMS[name])
         self._load_program()
 
     def _step_one(self):
-        """执行一个时钟周期。"""
+
         if not self.sim.instructions:
             messagebox.showwarning("未加载程序", "请先加载程序。")
             return
@@ -344,7 +284,7 @@ class TomasuloGUI:
         self._refresh_all()
 
     def _step_n(self):
-        """执行 N 个时钟周期。"""
+
         if not self.sim.instructions:
             messagebox.showwarning("未加载程序", "请先加载程序。")
             return
@@ -384,7 +324,7 @@ class TomasuloGUI:
         entry.bind('<Return>', lambda e: do_step())
 
     def _run_all(self):
-        """运行程序直到完成。"""
+
         if not self.sim.instructions:
             messagebox.showwarning("未加载程序", "请先加载程序。")
             return
@@ -398,7 +338,7 @@ class TomasuloGUI:
         self._log_message(f"程序执行完毕，共 {self.sim.clock} 周期。")
 
     def _reset(self):
-        """重置模拟器。"""
+
         if self.sim.instructions:
             self.sim.load(self.sim.instructions)
         self.max_display_cycle = 0
@@ -406,20 +346,17 @@ class TomasuloGUI:
         self._log_message("模拟器已重置。")
 
     def _prev_cycle(self):
-        """查看上一周期快照。"""
+
         if self.max_display_cycle > 0:
             self.max_display_cycle -= 1
             self._refresh_all(use_snapshot=self.max_display_cycle)
 
     def _next_cycle(self):
-        """查看下一周期快照。"""
+
         if self.max_display_cycle < len(self.sim.snapshots) - 1:
             self.max_display_cycle += 1
             self._refresh_all(use_snapshot=self.max_display_cycle)
 
-    # ==========================================================
-    # 刷新显示
-    # ==========================================================
     def _refresh_all(self, use_snapshot: int = -1):
         snap = self.sim.get_snapshot(use_snapshot)
         self._refresh_rs(snap)
@@ -519,7 +456,6 @@ class TomasuloGUI:
         self.log_text.insert(tk.END, msg + '\n')
         self.log_text.see(tk.END)
         self.log_text.configure(state=tk.DISABLED)
-
 
 if __name__ == '__main__':
     TomasuloGUI()

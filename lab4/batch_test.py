@@ -1,13 +1,3 @@
-"""
-Batch Test Runner for Cache Simulator Lab 4
-===========================================
-Runs all parameter combinations across all 4 trace files and exports results.
-Generates a CSV summary for analysis and report writing.
-
-Test matrix:
-  4 traces × 4 cache sizes × 4 associativities × 4 block sizes = 256 combinations
-"""
-
 import os
 import csv
 import time
@@ -28,12 +18,10 @@ ASSOCIATIVITIES = [1, 2, 4, 8]
 BLOCK_SIZES = [16, 32, 64, 128]
 BLOCK_SIZE_LABELS = ["16B", "32B", "64B", "128B"]
 
-# By default, use first 200K lines for speed; set to -1 for complete traces
 MAX_LINES = 200000
 
-
 def run_batch(max_lines=MAX_LINES, output_csv="batch_results.csv"):
-    """Run all parameter combinations."""
+
     results = []
     total = len(TRACE_FILES) * len(CACHE_SIZES) * len(ASSOCIATIVITIES) * len(BLOCK_SIZES)
     idx = 0
@@ -78,7 +66,6 @@ def run_batch(max_lines=MAX_LINES, output_csv="batch_results.csv"):
                         f"Elapsed: {elapsed:.0f}s  ETA: {eta:.0f}s"
                     )
 
-    # Export to CSV
     fieldnames = [
         'trace', 'trace_desc', 'cache_size_label', 'cache_size',
         'associativity', 'block_size_label', 'block_size',
@@ -103,18 +90,15 @@ def run_batch(max_lines=MAX_LINES, output_csv="batch_results.csv"):
     print(f"Results saved to: {output_csv}")
     print("=" * 80)
 
-    # Print summary table
     print_summary(results)
     return results
 
-
 def print_summary(results):
-    """Print a summary table grouped by trace and cache size."""
+
     print()
     print("SUMMARY: Average Hit Rate by Cache Size and Associativity")
     print("-" * 70)
 
-    # Group by cache_size_label and associativity
     from collections import defaultdict
     grouped = defaultdict(list)
 
@@ -125,7 +109,6 @@ def print_summary(results):
     assocs = sorted(set(r['associativity'] for r in results))
     sizes = ["8KB", "16KB", "32KB", "64KB"]
 
-    # Header
     header = f"{'Size':>6s}"
     for a in assocs:
         header += f"  {a}-way"
@@ -158,7 +141,6 @@ def print_summary(results):
             f"{best['block_size_label']:>6s} "
             f"{best['hit_rate']*100:>9.2f}%"
         )
-
 
 if __name__ == '__main__':
     run_batch(max_lines=MAX_LINES, output_csv="batch_results.csv")

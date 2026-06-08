@@ -1,10 +1,8 @@
-"""Quick test script for the Cache engine."""
 import os
 from cache_engine import CacheSimulator
 
 TRACE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'trace')
 
-# Test with GCC trace
 trace_path = os.path.join(TRACE_DIR, '085.gcc.din')
 print(f'Testing Cache Simulator with {trace_path}')
 print(f'File exists: {os.path.exists(trace_path)}')
@@ -27,7 +25,7 @@ if os.path.exists(trace_path):
     print('Test passed!')
 else:
     print(f'Trace file not found at {trace_path}')
-    # List what's in the trace dir
+
     if os.path.exists(TRACE_DIR):
         print(f'Contents of {TRACE_DIR}:')
         for f in os.listdir(TRACE_DIR):
