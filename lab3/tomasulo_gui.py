@@ -6,11 +6,37 @@ from tomasulo_engine import (
 )
 from typing import Optional
 
-TEST_NO_CONFLICT = 
+TEST_NO_CONFLICT = """# 测试1: 无冲突 — 所有指令相互独立
+LD F0, 0(R1)
+LD F2, 8(R1)
+LD F4, 16(R1)
+ADD.D F6, F0, F2
+MUL.D F8, F0, F4
+SUB.D F10, F2, F4
+DIV.D F12, F8, F6
+SD F10, 32(R1)
+SD F12, 40(R1)
+"""
 
-TEST_RAW = 
+TEST_RAW = """# 测试2: RAW冲突 — 真数据依赖链
+LD F0, 0(R1)
+ADD.D F2, F0, F4
+MUL.D F6, F2, F8
+SUB.D F10, F6, F0
+DIV.D F12, F10, F2
+SD F12, 32(R1)
+"""
 
-TEST_WAR = 
+TEST_WAR = """# 测试3: WAR冲突 — 反依赖 (Tomasulo通过重命名消除)
+MUL.D F0, F2, F4
+ADD.D F6, F0, F8
+SUB.D F0, F10, F12
+DIV.D F14, F0, F6
+LD F16, 0(R1)
+MUL.D F18, F16, F14
+SD F0, 32(R1)
+SD F18, 40(R1)
+"""
 
 TEST_PROGRAMS = {
     "无冲突": TEST_NO_CONFLICT,
