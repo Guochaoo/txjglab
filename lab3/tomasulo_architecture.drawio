@@ -1,0 +1,268 @@
+<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>
+
+<mxCell id="title" value="Tomasulo 算法 — 动态调度流水线架构" style="text;fontSize=21;fontStyle=1;align=center;fillColor=none;fontColor=#222;" vertex="1" parent="1">
+  <mxGeometry x="140" y="8" width="520" height="36" as="geometry"/>
+</mxCell>
+
+<!-- ========== 组1: 取指 ========== -->
+<mxCell id="g1" value="" style="rounded=1;fillColor=none;strokeColor=#546E7A;dashed=1;dashPattern=12 8;strokeWidth=2.5;" vertex="1" parent="1">
+  <mxGeometry x="180" y="55" width="440" height="105" as="geometry"/>
+</mxCell>
+<mxCell id="g1-label" value="取指" style="text;fontSize=11;fillColor=#ECEFF1;strokeColor=#546E7A;fontColor=#546E7A;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="180" y="55" width="36" height="20" as="geometry"/>
+</mxCell>
+<mxCell id="iq" value="指令队列（Instruction Queue）" style="rounded=1;fillColor=#ECEFF1;strokeColor=#546E7A;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1">
+  <mxGeometry x="230" y="82" width="340" height="38" as="geometry"/>
+</mxCell>
+<mxCell id="iq-sub" value="LD  ·  SD  ·  ADD.D  ·  SUB.D  ·  MUL.D  ·  DIV.D" style="text;fontSize=11;fillColor=none;fontColor=#607D8B;align=center;" vertex="1" parent="1">
+  <mxGeometry x="230" y="122" width="340" height="16" as="geometry"/>
+</mxCell>
+<mxCell id="iq-note" value="按程序顺序取指，指令按序进入队列等待流出" style="text;fontSize=10;fillColor=none;fontColor=#90A4AE;align=center;fontStyle=2;" vertex="1" parent="1">
+  <mxGeometry x="230" y="140" width="340" height="14" as="geometry"/>
+</mxCell>
+
+<mxCell id="a0" style="endArrow=classic;strokeColor=#78909C;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="iq" target="issue">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+
+<!-- ========== 组2: 流出 ========== -->
+<mxCell id="g2" value="" style="rounded=1;fillColor=none;strokeColor=#E65100;dashed=1;dashPattern=12 8;strokeWidth=2.5;" vertex="1" parent="1">
+  <mxGeometry x="180" y="180" width="440" height="120" as="geometry"/>
+</mxCell>
+<mxCell id="g2-label" value="流出（Issue）" style="text;fontSize=11;fillColor=#FFF8E1;strokeColor=#E65100;fontColor=#E65100;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="180" y="180" width="72" height="20" as="geometry"/>
+</mxCell>
+<mxCell id="issue" value="流出阶段" style="rounded=1;fillColor=#FFF8E1;strokeColor=#FF8F00;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1">
+  <mxGeometry x="350" y="205" width="140" height="34" as="geometry"/>
+</mxCell>
+<mxCell id="issue-s1" value="① 取一条指令，分配空闲保留站" style="text;fontSize=10;fillColor=none;fontColor=#795548;align=left;" vertex="1" parent="1">
+  <mxGeometry x="200" y="248" width="210" height="16" as="geometry"/>
+</mxCell>
+<mxCell id="issue-s2" value="② 读操作数: Qi空则读寄存器值(V) ; Qi非空则记录RS名(Q)，等待CDB广播" style="text;fontSize=10;fillColor=none;fontColor=#795548;align=left;" vertex="1" parent="1">
+  <mxGeometry x="200" y="266" width="400" height="16" as="geometry"/>
+</mxCell>
+
+<mxCell id="rename-box" value="寄存器重命名" style="rounded=1;fillColor=#FFFDE7;strokeColor=#F9A825;fontSize=10;fontStyle=1;align=center;" vertex="1" parent="1">
+  <mxGeometry x="540" y="200" width="70" height="24" as="geometry"/>
+</mxCell>
+<mxCell id="rename-ex" value="ADD.D F6,F0,F8:&#xa;F0→Add1则Qj=Add1&#xa;F8就绪则Vk=12.0&#xa;目标: F6→Add2" style="text;fontSize=8;fillColor=none;fontColor=#795548;align=left;" vertex="1" parent="1">
+  <mxGeometry x="540" y="228" width="70" height="52" as="geometry"/>
+</mxCell>
+
+<mxCell id="issue-note" value="核心思想: 流出时记录RS名而非寄存器号 → 彻底消除 WAR / WAW 假依赖" style="text;fontSize=10;fillColor=none;fontColor=#BF8F00;align=center;fontStyle=2;" vertex="1" parent="1">
+  <mxGeometry x="210" y="286" width="380" height="14" as="geometry"/>
+</mxCell>
+
+<!-- ========== 组3: 保留站 ========== -->
+<mxCell id="g3" value="" style="rounded=1;fillColor=none;strokeColor=#2E7D32;dashed=1;dashPattern=12 8;strokeWidth=2.5;" vertex="1" parent="1">
+  <mxGeometry x="10" y="320" width="780" height="175" as="geometry"/>
+</mxCell>
+<mxCell id="g3-label" value="保留站（Reservation Stations）" style="text;fontSize=11;fillColor=#E8F5E9;strokeColor=#2E7D32;fontColor=#2E7D32;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="10" y="320" width="172" height="20" as="geometry"/>
+</mxCell>
+
+<!-- RS 1 -->
+<mxCell id="add-rs" value="浮点加法 RS ×3" style="rounded=1;fillColor=#E8F5E9;strokeColor=#388E3C;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+  <mxGeometry x="22" y="350" width="175" height="34" as="geometry"/>
+</mxCell>
+<mxCell id="add-ex" value="例: Busy=1 Op=ADD Vj=5.0 Qk=Mul1 Dest=F6" style="text;fontSize=9;fillColor=none;fontColor=#388E3C;align=left;" vertex="1" parent="1">
+  <mxGeometry x="22" y="388" width="175" height="14" as="geometry"/>
+</mxCell>
+<mxCell id="add-ex2" value="Vj已就绪, 等待Mul1产生Vk (RAW)" style="text;fontSize=9;fillColor=none;fontColor=#388E3C;align=left;fontStyle=2;" vertex="1" parent="1">
+  <mxGeometry x="22" y="404" width="175" height="14" as="geometry"/>
+</mxCell>
+<mxCell id="add-sub" value="ADD.D / SUB.D    2 cycles" style="text;fontSize=10;fillColor=none;fontColor=#2E7D32;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="22" y="428" width="175" height="14" as="geometry"/>
+</mxCell>
+
+<!-- RS 2 -->
+<mxCell id="mul-rs" value="浮点乘除 RS ×2" style="rounded=1;fillColor=#E8F5E9;strokeColor=#388E3C;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+  <mxGeometry x="218" y="350" width="175" height="34" as="geometry"/>
+</mxCell>
+<mxCell id="mul-ex" value="例: Busy=1 Op=MUL Vj=3.0 Vk=4.0 Dest=F0" style="text;fontSize=9;fillColor=none;fontColor=#388E3C;align=left;" vertex="1" parent="1">
+  <mxGeometry x="218" y="388" width="175" height="14" as="geometry"/>
+</mxCell>
+<mxCell id="mul-ex2" value="操作数均就绪 → 开始执行 (10 cycles)" style="text;fontSize=9;fillColor=none;fontColor=#388E3C;align=left;fontStyle=2;" vertex="1" parent="1">
+  <mxGeometry x="218" y="404" width="175" height="14" as="geometry"/>
+</mxCell>
+<mxCell id="mul-sub" value="MUL.D 10  /  DIV.D 40 cycles" style="text;fontSize=10;fillColor=none;fontColor=#2E7D32;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="218" y="428" width="175" height="14" as="geometry"/>
+</mxCell>
+
+<!-- RS 3 -->
+<mxCell id="load-rs" value="Load 缓冲器 ×3" style="rounded=1;fillColor=#E3F2FD;strokeColor=#1976D2;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+  <mxGeometry x="414" y="350" width="170" height="34" as="geometry"/>
+</mxCell>
+<mxCell id="load-ex" value="例: Busy=1 A=R1+0=0x1000 Dest=F0" style="text;fontSize=9;fillColor=none;fontColor=#1976D2;align=left;" vertex="1" parent="1">
+  <mxGeometry x="414" y="388" width="170" height="14" as="geometry"/>
+</mxCell>
+<mxCell id="load-ex2" value="计算有效地址, 等待访存 (1 cycle)" style="text;fontSize=9;fillColor=none;fontColor=#1976D2;align=left;fontStyle=2;" vertex="1" parent="1">
+  <mxGeometry x="414" y="404" width="170" height="14" as="geometry"/>
+</mxCell>
+<mxCell id="load-sub" value="LD    1 cycle" style="text;fontSize=10;fillColor=none;fontColor=#1565C0;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="414" y="428" width="170" height="14" as="geometry"/>
+</mxCell>
+
+<!-- RS 4 -->
+<mxCell id="store-rs" value="Store 缓冲器 ×3" style="rounded=1;fillColor=#E3F2FD;strokeColor=#1976D2;fontSize=12;fontStyle=1;align=center;" vertex="1" parent="1">
+  <mxGeometry x="604" y="350" width="175" height="34" as="geometry"/>
+</mxCell>
+<mxCell id="store-ex" value="例: Busy=1 A=R1+32=0x1020 Vj=15.0" style="text;fontSize=9;fillColor=none;fontColor=#1976D2;align=left;" vertex="1" parent="1">
+  <mxGeometry x="604" y="388" width="175" height="14" as="geometry"/>
+</mxCell>
+<mxCell id="store-ex2" value="计算地址, 等待Vj就绪后写内存" style="text;fontSize=9;fillColor=none;fontColor=#1976D2;align=left;fontStyle=2;" vertex="1" parent="1">
+  <mxGeometry x="604" y="404" width="175" height="14" as="geometry"/>
+</mxCell>
+<mxCell id="store-sub" value="SD    1 cycle" style="text;fontSize=10;fillColor=none;fontColor=#1565C0;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="604" y="428" width="175" height="14" as="geometry"/>
+</mxCell>
+
+<mxCell id="rs-detail" value="每项字段: [Busy] [Op] [Vj,Vk] [Qj,Qk] [A地址] [Dest目标寄存器] [剩余周期]" style="rounded=0;fillColor=#FAFAFA;strokeColor=#BDBDBD;dashed=1;dashPattern=3 3;fontSize=10;align=center;fontColor=#888;" vertex="1" parent="1">
+  <mxGeometry x="60" y="455" width="680" height="22" as="geometry"/>
+</mxCell>
+
+<!-- Issue→RS -->
+<mxCell id="a1" style="endArrow=classic;strokeColor=#999;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="issue" target="add-rs">
+  <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="420" y="305"/><mxPoint x="110" y="305"/></Array></mxGeometry>
+</mxCell>
+<mxCell id="a2" style="endArrow=classic;strokeColor=#999;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="issue" target="mul-rs">
+  <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="420" y="305"/><mxPoint x="305" y="305"/></Array></mxGeometry>
+</mxCell>
+<mxCell id="a3" style="endArrow=classic;strokeColor=#999;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="issue" target="load-rs">
+  <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="420" y="305"/><mxPoint x="499" y="305"/></Array></mxGeometry>
+</mxCell>
+<mxCell id="a4" style="endArrow=classic;strokeColor=#999;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="issue" target="store-rs">
+  <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="420" y="305"/><mxPoint x="691" y="305"/></Array></mxGeometry>
+</mxCell>
+
+<!-- ========== 组4: 执行 ========== -->
+<mxCell id="g4" value="" style="rounded=1;fillColor=none;strokeColor=#BF360C;dashed=1;dashPattern=12 8;strokeWidth=2.5;" vertex="1" parent="1">
+  <mxGeometry x="30" y="498" width="740" height="130" as="geometry"/>
+</mxCell>
+<mxCell id="g4-label" value="执行（Execute）" style="text;fontSize=11;fillColor=#FFF3E0;strokeColor=#BF360C;fontColor=#BF360C;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="30" y="498" width="88" height="20" as="geometry"/>
+</mxCell>
+<mxCell id="fu-title" value="功能单元 — 操作数就绪后开始执行，完成后触发CDB广播" style="text;fontSize=12;fontStyle=1;align=center;fillColor=none;fontColor=#6D4C41;" vertex="1" parent="1">
+  <mxGeometry x="150" y="508" width="500" height="20" as="geometry"/>
+</mxCell>
+
+<mxCell id="fu-add" value="浮点加法器" style="rounded=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=13;fontStyle=1;align=center;" vertex="1" parent="1">
+  <mxGeometry x="50" y="536" width="130" height="40" as="geometry"/>
+</mxCell>
+<mxCell id="fu-add-sub" value="延迟: 2 cycles" style="text;fontSize=10;fillColor=none;fontColor=#E65100;align=center;" vertex="1" parent="1">
+  <mxGeometry x="55" y="580" width="120" height="16" as="geometry"/>
+</mxCell>
+
+<mxCell id="fu-mul" value="浮点乘除器" style="rounded=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=13;fontStyle=1;align=center;" vertex="1" parent="1">
+  <mxGeometry x="235" y="536" width="135" height="40" as="geometry"/>
+</mxCell>
+<mxCell id="fu-mul-sub" value="乘 10 / 除 40 cycles" style="text;fontSize=10;fillColor=none;fontColor=#E65100;align=center;" vertex="1" parent="1">
+  <mxGeometry x="238" y="580" width="130" height="16" as="geometry"/>
+</mxCell>
+
+<mxCell id="fu-ls" value="访存单元" style="rounded=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=13;fontStyle=1;align=center;" vertex="1" parent="1">
+  <mxGeometry x="430" y="536" width="135" height="40" as="geometry"/>
+</mxCell>
+<mxCell id="fu-ls-sub" value="延迟: 1 cycle" style="text;fontSize=10;fillColor=none;fontColor=#E65100;align=center;" vertex="1" parent="1">
+  <mxGeometry x="445" y="580" width="105" height="16" as="geometry"/>
+</mxCell>
+
+<mxCell id="mem" value="主存&#xa;Memory" style="shape=cylinder;fillColor=#F3E5F5;strokeColor=#7B1FA2;fontSize=11;fontStyle=1;align=center;size=14;" vertex="1" parent="1">
+  <mxGeometry x="640" y="528" width="95" height="56" as="geometry"/>
+</mxCell>
+
+<!-- RS→FU -->
+<mxCell id="a5" style="endArrow=classic;strokeColor=#999;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="add-rs" target="fu-add">
+  <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="110" y="483"/><mxPoint x="115" y="518"/></Array></mxGeometry>
+</mxCell>
+<mxCell id="a6" style="endArrow=classic;strokeColor=#999;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="mul-rs" target="fu-mul">
+  <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="305" y="483"/><mxPoint x="302" y="518"/></Array></mxGeometry>
+</mxCell>
+<mxCell id="a7" style="endArrow=classic;strokeColor=#999;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="load-rs" target="fu-ls">
+  <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="499" y="483"/><mxPoint x="497" y="518"/></Array></mxGeometry>
+</mxCell>
+<mxCell id="a8" style="endArrow=classic;strokeColor=#999;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="store-rs" target="fu-ls">
+  <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="691" y="483"/><mxPoint x="497" y="518"/></Array></mxGeometry>
+</mxCell>
+<mxCell id="a9" style="endArrow=classic;strokeColor=#7B1FA2;strokeWidth=1;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="fu-ls" target="mem">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+
+<!-- ========== 组5: CDB ========== -->
+<mxCell id="g5" value="" style="rounded=1;fillColor=none;strokeColor=#B71C1C;dashed=1;dashPattern=12 8;strokeWidth=2.5;" vertex="1" parent="1">
+  <mxGeometry x="40" y="645" width="720" height="105" as="geometry"/>
+</mxCell>
+<mxCell id="g5-label" value="公共数据总线（CDB）" style="text;fontSize=11;fillColor=#FFEBEE;strokeColor=#B71C1C;fontColor=#B71C1C;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="40" y="645" width="124" height="20" as="geometry"/>
+</mxCell>
+
+<mxCell id="cdb" value="Common Data Bus — 每个周期最多一个RS可以广播结果" style="rounded=1;fillColor=#FFEBEE;strokeColor=#C62828;fontSize=14;fontStyle=1;align=center;strokeWidth=2;" vertex="1" parent="1">
+  <mxGeometry x="90" y="672" width="620" height="36" as="geometry"/>
+</mxCell>
+<mxCell id="cdb-mech" value="广播: (结果值, RS名) → 所有RS的Qj/Qk与RS名比较 → 匹配则捕获值并清空Q → 寄存器文件同步更新" style="text;fontSize=10;fillColor=none;fontColor=#C62828;align=left;" vertex="1" parent="1">
+  <mxGeometry x="90" y="714" width="620" height="16" as="geometry"/>
+</mxCell>
+<mxCell id="cdb-ex" value="例: Mul1完成广播(value=12.0, src=Mul1) → Add1的Qk=Mul1匹配 → Vk=12.0, Qk清空 → Add1操作数全部就绪" style="text;fontSize=10;fillColor=none;fontColor=#C62828;align=left;fontStyle=2;" vertex="1" parent="1">
+  <mxGeometry x="90" y="732" width="620" height="14" as="geometry"/>
+</mxCell>
+
+<!-- FU→CDB -->
+<mxCell id="a10" style="endArrow=classic;strokeColor=#C62828;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.18;entryY=0;" edge="1" parent="1" source="fu-add" target="cdb">
+  <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="115" y="625"/></Array></mxGeometry>
+</mxCell>
+<mxCell id="a11" style="endArrow=classic;strokeColor=#C62828;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.38;entryY=0;" edge="1" parent="1" source="fu-mul" target="cdb">
+  <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="302" y="625"/></Array></mxGeometry>
+</mxCell>
+<mxCell id="a12" style="endArrow=classic;strokeColor=#C62828;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.58;entryY=0;" edge="1" parent="1" source="fu-ls" target="cdb">
+  <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="497" y="625"/></Array></mxGeometry>
+</mxCell>
+<mxCell id="a13" style="endArrow=classic;strokeColor=#C62828;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.85;entryY=0;" edge="1" parent="1" source="mem" target="cdb">
+  <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="687" y="625"/></Array></mxGeometry>
+</mxCell>
+
+<!-- ========== 组6: 写回 ========== -->
+<mxCell id="g6" value="" style="rounded=1;fillColor=none;strokeColor=#311B92;dashed=1;dashPattern=12 8;strokeWidth=2.5;" vertex="1" parent="1">
+  <mxGeometry x="200" y="770" width="560" height="130" as="geometry"/>
+</mxCell>
+<mxCell id="g6-label" value="写回（Write Result）" style="text;fontSize=11;fillColor=#EDE7F6;strokeColor=#311B92;fontColor=#311B92;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="200" y="770" width="120" height="20" as="geometry"/>
+</mxCell>
+
+<mxCell id="wr" value="写回阶段" style="rounded=1;fillColor=#EDE7F6;strokeColor=#4527A0;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1">
+  <mxGeometry x="280" y="798" width="200" height="36" as="geometry"/>
+</mxCell>
+<mxCell id="wr-ops" value="1. 更新寄存器 Fdest = value&#xa;2. 清除 Qi(Fdest) 为空 (就绪)&#xa;3. 唤醒所有等待该RS的指令 (Qj/Qk匹配的RS)" style="text;fontSize=10;fillColor=none;fontColor=#4527A0;align=left;" vertex="1" parent="1">
+  <mxGeometry x="280" y="840" width="240" height="44" as="geometry"/>
+</mxCell>
+
+<mxCell id="regfile" value="寄存器文件" style="rounded=1;fillColor=#E8EAF6;strokeColor=#283593;fontSize=13;fontStyle=1;align=center;" vertex="1" parent="1">
+  <mxGeometry x="570" y="796" width="150" height="36" as="geometry"/>
+</mxCell>
+<mxCell id="regfile-ex" value="F0=12.0  Qi=空 (就绪)&#xa;F6=0.0    Qi=Add1 (等待)&#xa;F8=5.0    Qi=Mul2 (等待)" style="text;fontSize=10;fillColor=none;fontColor=#283593;align=left;" vertex="1" parent="1">
+  <mxGeometry x="565" y="838" width="160" height="44" as="geometry"/>
+</mxCell>
+
+<!-- CDB→WR -->
+<mxCell id="a14" style="endArrow=classic;strokeColor=#4527A0;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="cdb" target="wr">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+<mxCell id="a15" style="endArrow=classic;strokeColor=#283593;strokeWidth=1.5;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="wr" target="regfile">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+
+<!-- CDB反馈 -->
+<mxCell id="fb" style="endArrow=classic;strokeColor=#C62828;strokeWidth=1.5;dashed=1;exitX=0.01;exitY=0.5;entryX=0;entryY=0.3;" edge="1" parent="1" source="cdb" target="add-rs">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points"><mxPoint x="6" y="692"/><mxPoint x="6" y="361"/></Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="fb-label" value="CDB&#xa;反馈&#xa;Qj/Qk&#xa;匹配" style="text;fontSize=9;fillColor=none;fontColor=#C62828;align=center;fontStyle=2;" vertex="1" parent="1">
+  <mxGeometry x="2" y="510" width="42" height="48" as="geometry"/>
+</mxCell>
+
+<!-- 底部 -->
+<mxCell id="flow" value="每周期流程:  ① 写结果 (CDB广播)  →  ② 流出 (分配RS + 寄存器重命名)  →  ③ 执行 (操作数就绪→功能单元开始)  →  ④ 剩余周期减1" style="rounded=1;fillColor=#F5F5F5;strokeColor=#BDBDBD;fontSize=11;align=center;fontColor=#555;" vertex="1" parent="1">
+  <mxGeometry x="40" y="920" width="720" height="28" as="geometry"/>
+</mxCell>
+
+</root></mxGraphModel>

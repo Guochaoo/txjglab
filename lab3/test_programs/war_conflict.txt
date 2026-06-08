@@ -1,0 +1,13 @@
+# Test Program 3: WAR Conflict (Anti-dependence)
+# An earlier instruction reads a register that a later instruction writes
+# Without register renaming, this creates a WAR hazard
+# Tomasulo eliminates WAR hazards through reservation station renaming
+
+MUL.D F0, F2, F4
+ADD.D F6, F0, F8
+SUB.D F0, F10, F12
+DIV.D F14, F0, F6
+LD F16, 0(R1)
+MUL.D F18, F16, F14
+SD F0, 32(R1)
+SD F18, 40(R1)

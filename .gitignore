@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pptx
+*.pdf
+*.rar
+*.png
+*.svg
+*.jpg
+trace/
+.DS_Store
+batch_results.csv

@@ -1,0 +1,98 @@
+<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>
+
+<mxCell id="title" value="Tomasulo 算法 — 每周期执行流程" style="text;fontSize=20;fontStyle=1;align=center;fillColor=none;fontColor=#222;" vertex="1" parent="1">
+  <mxGeometry x="140" y="10" width="480" height="34" as="geometry"/>
+</mxCell>
+
+<!-- ========== 阶段1: 写结果 ========== -->
+<mxCell id="g1" value="" style="rounded=1;fillColor=none;strokeColor=#C62828;dashed=1;dashPattern=12 8;strokeWidth=2.5;" vertex="1" parent="1">
+  <mxGeometry x="60" y="60" width="640" height="175" as="geometry"/>
+</mxCell>
+<mxCell id="g1-label" value="阶段一" style="text;fontSize=11;fillColor=#FFEBEE;strokeColor=#C62828;fontColor=#C62828;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="60" y="60" width="48" height="20" as="geometry"/>
+</mxCell>
+<mxCell id="phase1-title" value="① 写结果  (Write Result)  —  CDB 广播" style="text;fontSize=16;fontStyle=1;fillColor=none;fontColor=#C62828;align=left;" vertex="1" parent="1">
+  <mxGeometry x="120" y="75" width="400" height="28" as="geometry"/>
+</mxCell>
+<mxCell id="p1-i1" value="检查所有保留站 (RS)，找到已完成执行 (剩余周期=0) 的 RS" style="text;fontSize=12;fillColor=none;fontColor=#444;align=left;" vertex="1" parent="1">
+  <mxGeometry x="100" y="114" width="560" height="22" as="geometry"/>
+</mxCell>
+<mxCell id="p1-i2" value="该 RS 通过公共数据总线 (CDB) 广播结果:  (结果值, RS名称)" style="text;fontSize=12;fillColor=none;fontColor=#444;align=left;" vertex="1" parent="1">
+  <mxGeometry x="100" y="140" width="560" height="22" as="geometry"/>
+</mxCell>
+<mxCell id="p1-i3" value="所有 RS 监听 CDB: 若 Qj/Qk 匹配广播的RS名 → 捕获结果值并清空 Q" style="text;fontSize=12;fillColor=none;fontColor=#444;align=left;" vertex="1" parent="1">
+  <mxGeometry x="100" y="166" width="560" height="22" as="geometry"/>
+</mxCell>
+<mxCell id="p1-i4" value="更新寄存器文件 Fdest ← value，清除寄存器状态表 Qi(Fdest) ← 空" style="text;fontSize=12;fillColor=none;fontColor=#444;align=left;" vertex="1" parent="1">
+  <mxGeometry x="100" y="195" width="560" height="22" as="geometry"/>
+</mxCell>
+
+<!-- 箭头 1→2 -->
+<mxCell id="a12" style="endArrow=classic;strokeColor=#333;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="g1" target="g2">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+
+<!-- ========== 阶段2: 流出 ========== -->
+<mxCell id="g2" value="" style="rounded=1;fillColor=none;strokeColor=#FF8F00;dashed=1;dashPattern=12 8;strokeWidth=2.5;" vertex="1" parent="1">
+  <mxGeometry x="60" y="260" width="640" height="175" as="geometry"/>
+</mxCell>
+<mxCell id="g2-label" value="阶段二" style="text;fontSize=11;fillColor=#FFF8E1;strokeColor=#FF8F00;fontColor=#E65100;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="60" y="260" width="48" height="20" as="geometry"/>
+</mxCell>
+<mxCell id="phase2-title" value="② 流出  (Issue)" style="text;fontSize=16;fontStyle=1;fillColor=none;fontColor=#E65100;align=left;" vertex="1" parent="1">
+  <mxGeometry x="120" y="275" width="300" height="28" as="geometry"/>
+</mxCell>
+<mxCell id="p2-i1" value="从指令队列头部取一条指令" style="text;fontSize=12;fillColor=none;fontColor=#444;align=left;" vertex="1" parent="1">
+  <mxGeometry x="100" y="314" width="560" height="22" as="geometry"/>
+</mxCell>
+<mxCell id="p2-i2" value="为该指令分配一个空闲的同类型保留站 (RS) — 若无空闲RS则停顿 (结构冲突)" style="text;fontSize=12;fillColor=none;fontColor=#444;align=left;" vertex="1" parent="1">
+  <mxGeometry x="100" y="340" width="560" height="22" as="geometry"/>
+</mxCell>
+<mxCell id="p2-i3" value="读操作数 (寄存器重命名): 查看寄存器状态表 Qi — 空则读寄存器值(V) ; 非空则记录RS名(Q)" style="text;fontSize=12;fillColor=none;fontColor=#444;align=left;" vertex="1" parent="1">
+  <mxGeometry x="100" y="366" width="560" height="22" as="geometry"/>
+</mxCell>
+<mxCell id="p2-i4" value="更新目标寄存器的 Qi 为该RS名 — 后续指令流出时会看到此RS名 (实现重命名)" style="text;fontSize=12;fillColor=none;fontColor=#444;align=left;" vertex="1" parent="1">
+  <mxGeometry x="100" y="394" width="560" height="22" as="geometry"/>
+</mxCell>
+
+<!-- 箭头 2→3 -->
+<mxCell id="a23" style="endArrow=classic;strokeColor=#333;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="g2" target="g3">
+  <mxGeometry relative="1" as="geometry"/>
+</mxCell>
+
+<!-- ========== 阶段3: 执行 ========== -->
+<mxCell id="g3" value="" style="rounded=1;fillColor=none;strokeColor=#2E7D32;dashed=1;dashPattern=12 8;strokeWidth=2.5;" vertex="1" parent="1">
+  <mxGeometry x="60" y="460" width="640" height="160" as="geometry"/>
+</mxCell>
+<mxCell id="g3-label" value="阶段三" style="text;fontSize=11;fillColor=#E8F5E9;strokeColor=#2E7D32;fontColor=#2E7D32;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="60" y="460" width="48" height="20" as="geometry"/>
+</mxCell>
+<mxCell id="phase3-title" value="③ 执行  (Execute)" style="text;fontSize=16;fontStyle=1;fillColor=none;fontColor=#2E7D32;align=left;" vertex="1" parent="1">
+  <mxGeometry x="120" y="475" width="300" height="28" as="geometry"/>
+</mxCell>
+<mxCell id="p3-i1" value="遍历所有忙碌 RS: 若操作数均已就绪 (Qj=空 且 Qk=空) 且尚未开始 → 启动执行 (加载延迟周期)" style="text;fontSize=12;fillColor=none;fontColor=#444;align=left;" vertex="1" parent="1">
+  <mxGeometry x="100" y="516" width="560" height="22" as="geometry"/>
+</mxCell>
+<mxCell id="p3-i2" value="每个已开始执行的 RS 的剩余周期减 1" style="text;fontSize=12;fillColor=none;fontColor=#444;align=left;" vertex="1" parent="1">
+  <mxGeometry x="100" y="542" width="560" height="22" as="geometry"/>
+</mxCell>
+<mxCell id="p3-i3" value="不同功能单元的延迟: 加法器 2 cycles | 乘法器 10 cycles | 除法器 40 cycles | 访存 1 cycle" style="text;fontSize=12;fillColor=none;fontColor=#444;align=left;" vertex="1" parent="1">
+  <mxGeometry x="100" y="568" width="560" height="22" as="geometry"/>
+</mxCell>
+
+<!-- 循环箭头 -->
+<mxCell id="loop" style="endArrow=classic;strokeColor=#1976D2;strokeWidth=2;dashed=1;exitX=0;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="g3" target="g1">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points"><mxPoint x="20" y="540"/><mxPoint x="20" y="147"/></Array>
+  </mxGeometry>
+</mxCell>
+<mxCell id="loop-label" value="下一周期&#xa;Cycle N+1" style="text;fontSize=11;fillColor=none;fontColor=#1976D2;align=center;fontStyle=1;" vertex="1" parent="1">
+  <mxGeometry x="2" y="315" width="52" height="32" as="geometry"/>
+</mxCell>
+
+<!-- 底部说明 -->
+<mxCell id="note" value="注意: 三个阶段在 同一周期 内顺序执行 ; 每个周期 最多一个RS 可通过CDB写结果 (单CDB约束)" style="rounded=1;fillColor=#F5F5F5;strokeColor=#BDBDBD;fontSize=11;align=center;fontColor=#555;" vertex="1" parent="1">
+  <mxGeometry x="60" y="645" width="640" height="30" as="geometry"/>
+</mxCell>
+
+</root></mxGraphModel>

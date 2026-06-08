@@ -1,0 +1,13 @@
+# Test Program 1: No Conflict
+# All instructions are independent - no RAW, WAR, or WAW hazards
+# Each instruction uses different registers, no dependencies
+
+LD F0, 0(R1)
+LD F2, 8(R1)
+LD F4, 16(R1)
+ADD.D F6, F0, F2
+MUL.D F8, F0, F4
+SUB.D F10, F2, F4
+DIV.D F12, F8, F6
+SD F10, 32(R1)
+SD F12, 40(R1)
